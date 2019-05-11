@@ -179,11 +179,13 @@ var senateInfo = {
 
                     var titleHtml = '<b>Name: </b>' +  memberName;
                     var brk = document.createElement('br');
+                    var stateHtml = '<b>State Elected: </b>' + memberData.results[0].roles[0].state;
+                    var aBrk = document.createElement('br');
                     var partyHtml = '<b>Party Affiliation: </b>' + currentParty;
                     var anotherBrk = document.createElement('br');
-                    var infoHtml = '<b>More Information at: </b>' + memberData.results[0].url;
+                    var infoHtml = '<a href="' + memberData.results[0].url + '" target="_blank">' + memberData.results[0].url + '</a>';
                     var headerPara = document.createElement('p');
-                    $(headerPara).append(titleHtml, brk, partyHtml, anotherBrk, infoHtml);
+                    $(headerPara).append(titleHtml, brk, stateHtml, aBrk, partyHtml, anotherBrk, infoHtml);
                 
 
                     var senBlock = document.createElement('div');
@@ -193,6 +195,7 @@ var senateInfo = {
 
                     var themeImage = document.createElement('img');
                     themeImage.setAttribute('src', 'https://theunitedstates.io/images/congress/225x275/' + member_id + '.jpg');
+                    themeImage.setAttribute('alt', 'Senator ' + memberName );
                     themeImage.className = 'card-image-top img-fluid';
 
                     var senColumn = document.createElement('div');
