@@ -166,8 +166,8 @@ class Member {
         var aBrk = document.createElement('br');
         var partyHtml = '<b>Party Affiliation: </b>' + this.party;
         var anotherBrk = document.createElement('br');
-        var infoHtml = '<a href="https://www.' + this.lastName +      '.senate.gov" target="_blank">Web Site</a>';
-        var bioHtml = '<a href="http://bioguide.congress.gov/scripts/biodisplay.pl?index=' + this.memberId + '" target="_blank">Biography</a>';
+        var infoHtml = '<a class="under-line" href="https://www.' + this.lastName +      '.senate.gov" target="_blank">Web Site</a>';
+        var bioHtml = '<a class="under-line" href="http://bioguide.congress.gov/scripts/biodisplay.pl?index=' + this.memberId + '" target="_blank">Biography</a>';
         // var brk3 = document.createElement('br');
         var brk2 = document.createElement('br');
         // var brk4 = document.createElement('br');
@@ -180,7 +180,7 @@ class Member {
         $(headerPara).append(titleHtml, brk, stateHtml, aBrk, partyHtml, anotherBrk, infoHtml, brk2, bioHtml);
 
         var senBlock = document.createElement('div');
-        senBlock.className = 'card-block';
+        senBlock.className = 'card-block bigger-font';
         senBlock.append(headerPara);
 
         var themeImage = document.createElement('img');
