@@ -1,14 +1,14 @@
 .jumbotron {
     min-height: 300px;
     margin-top:20px;
-    background-image: url("../images/americanFlag2560x1600.jpg");
+    background-image: url("../images/sunshine.jpg");
     background-size: cover;
     /* background-size: auto 100%;  fits the height but maybe not the width */
     /* background-size: 100% 100%; */ /* height and width but not the aspect ration */
     /* background-size: auto; */
     /* background-position: center center; */
     /* background-position: center top; */
-    background-position: center left;
+    background-position: center top;
 }
 form {
     width: 500px;
