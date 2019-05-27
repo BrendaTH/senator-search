@@ -6,13 +6,23 @@
 // globals
 //***************** */
 var senatorInfoLocation = document.getElementById('senator-data');
+
+// storage for each senator as they are clicked on for info
 var senatorsArray = [];
 var senatorArrayIndex = 0;
+
+// storage for propublica query response on 'all members'
+// we do this on startup
 var allMembersArray = [];
+
+// storage for fec query response for info on all senatorial 
+// candidates in the 2016 and 2018 elections
+var fec2018SenatorCandidates =[];
+var fec2016SenatorCandidates = [];
 //***************** */
 // functions
 //***************** */
-
+// allMembersQueryResponse - handles the asynch response from the queryAllMembersAPI
 function allMembersQueryResponse(response) {
     // all members response
     console.log(response)
@@ -38,6 +48,76 @@ function queryAllMembersAPI() {
     .then(allMembersQueryResponse)
     .catch(allMembersErrorResponse);
 }
+
+// fec.gov api query response handling
+// stores the response in the fec[year]SenatorCandidates array (global)
+function fecQueryResponse(response) {
+    // because we are in a callback there is no 'this', and no way to tell which senator had the error
+    console.log('fec query response');
+    if (!response.results) {
+        console.log('error in fec query responseresults');
+        console.log(response);
+        return;
+    }
+    console.log(response.results);
+    // the results come back in two pages, so we have to concat the array
+    fec2018SenatorCandidates = fec2018SenatorCandidates.concat(response.results);
+    console.log("FEC 2018 Senator Candidates");
+    console.log(fec2018SenatorCandidates);
+
+    // bjt bjt bjt
+    if (fec2018SenatorCandidates.length > 100) {
+        for (var i = 0; i < fec2018SenatorCandidates.length; i++) {
+            var cidArray = fec2018SenatorCandidates[i].candidate_id.split('');
+            if (cidArray[2] === 'M' && cidArray[3] === 'A') {
+                console.log("name is: " + fec2018SenatorCandidates[i].name + "candidate id = " + fec2018SenatorCandidates[i].candidate_id);
+                console.log('cycles: ' + fec2018SenatorCandidates[i].cycles);
+            }
+        }
+    }
+
+}
+
+function fecQueryResponseError(error) {
+    console.log('fec query hit an error: ' + error);
+}
+
+function queryFec2018SenateCandidates() {
+    //**************************************************** */
+    // fec api query
+    // http://api.open.fec.gov/v1/candidate/{candidate_id}/history
+    // warren committee for president C00693234 warren P00009621
+    // https://www.fec.gov/data/candidate/P00009621/?cycle=2020&election_full=false
+    // obama P80003338
+    var fecAPIKey = 'i24dHGikX6D7nn8ilW0yct1WdE67QI6udYyNJ8J8';
+    // curl -X GET "https://api.open.fec.gov/v1/candidates/search/?office=P&page=1&sort=name&sort_nulls_last=false&per_page=20&candidate_status=C&cycle=2020&sort_null_only=false&api_key=" + fecAPIKey + "&sort_hide_null=true" -H "accept: application/json"
+    //var fecQuery = 'http://api.open.fec.gov/v1/candidate/P00009621/?cycle=2020&election_full=false&api_key=i24dHGikX6D7nn8ilW0yct1WdE67QI6udYyNJ8J8';
+    // president 2020var fecQuery = 'http://api.open.fec.gov/v1/candidates/?cycle=2020&office=P&candidate_status=C&api_key=' + fecAPIKey;
+    // history of candidate'http://api.open.fec.gov/v1/candidate/P00009621/history?api_key=i24dHGikX6D7nn8ilW0yct1WdE67QI6udYyNJ8J8';
+
+    // searches for senators involved in the 2018 race (there are 121 repsonses max is 100 per page)
+    // we request two pages 65 on this one and 65 on the next 
+    var fecQuery = 'http://api.open.fec.gov/v1/candidates/?cycle=2018&office=S&per_page=65&candidate_status=C&api_key=' + fecAPIKey
+        
+    $.ajax({
+        // fec.gov query for senators involved in the 2018 race
+        url: fecQuery,
+        method: "GET",
+    })
+    .then(this.fecQueryResponse)
+    .catch(this.fecQueryResponseError);
+    
+    // page 2 search
+    var fecQueryPage2 = 'http://api.open.fec.gov/v1/candidates/?cycle=2018&office=S&per_page=65&page=2&candidate_status=C&api_key=' + fecAPIKey;
+    $.ajax({
+        // fec.gov query
+        url: fecQueryPage2,
+        method: "GET",
+    })
+    .then(this.fecQueryResponse)
+    .catch(this.fecQueryResponseError);
+}
+
 //***************** */
 // objects and classes
 //***************** */
@@ -46,7 +126,14 @@ class Member {
         var nameArray = nameStr.split(" ");
         this.lastName = nameArray[1];
         this.firstName = nameArray[0];
+        this.authorizedCommittees = [];
+        // you need to declare your var properties here to make it clear bjt
 
+        if (this.lastName === 'Warren') {
+            // such a hack. for whatever reason warren's name doesn't show up in the fec senate candidate id search
+            // this is her fec senate id so it should do
+            this.fecCandidateId = 'S2MA00170';
+        }
         // find our senator
         for (var i = 0; i < allMembersArray.length; i++) {
             // console.log( 'index is: ' + i);
@@ -79,7 +166,7 @@ class Member {
         var aBrk = document.createElement('br');
         var partyHtml = '<b>Party Affiliation: </b>' + this.party;
         var anotherBrk = document.createElement('br');
-        var infoHtml = '<a href="https://www.' + this.lastName + '.senate.gov" target="_blank">Web Site</a>';
+        var infoHtml = '<a href="https://www.' + this.lastName +      '.senate.gov" target="_blank">Web Site</a>';
         var bioHtml = '<a href="http://bioguide.congress.gov/scripts/biodisplay.pl?index=' + this.memberId + '" target="_blank">Biography</a>';
         // var brk3 = document.createElement('br');
         var brk2 = document.createElement('br');
@@ -107,7 +194,15 @@ class Member {
 
         $("#senators-appear-here").prepend(senColumn);
     }
-    static getCampaignFinanceQuery(response) {
+
+    // propublica api query response handling
+    campaignFinanceQueryResponse(response) {
+        // because we are in a callback there is no 'this', and no way to tell which senator had the error
+        if (response.status !== 'OK') {
+            console.log('An error in campaign Finance Query Response');
+            console.log(response);
+            return;
+        }
         console.log(response.results);
         var disbursements = response.results[0].total_disbursements;
         if (disbursements === 0) {
@@ -133,29 +228,6 @@ class Member {
         $(idName).append(disbursementHtml);
         $(idName).append(individualsHtml);
         $(idName).append(pacsHtml);
-    }
-    // fec.gov api query response handling
-    fecQueryResponse(response) {
-        // because we are in a callback there is no 'this', and no way to tell which senator had the error
-        console.log('fec query response');
-        console.log(response);
-        if (response.status !== 'OK') {
-            console.log('An error in campaign Finance Query Response');
-            console.log(response);
-            return;
-        }
-    }
-
-
-    // propublica api query response handling
-    campaignFinanceQueryResponse(response) {
-        // because we are in a callback there is no 'this', and no way to tell which senator had the error
-        if (response.status !== 'OK') {
-            console.log('An error in campaign Finance Query Response');
-            console.log(response);
-            return;
-        }
-        Member.getCampaignFinanceQuery(response);
     }
 
     campaignFinanceQueryError(error) {
@@ -189,39 +261,98 @@ class Member {
         })
         .then(this.campaignFinanceQueryResponse)
         .catch(this.campaignFinanceQueryError);
-/*
-        // http://api.open.fec.gov/v1/candidate/{candidate_id}/history
-        // warren committee for president C00693234 warren P00009621
-        // https://www.fec.gov/data/candidate/P00009621/?cycle=2020&election_full=false
-        // obama P80003338
+
+    }
+    // passed this in the ajax context setting so we have it
+    responseFecForCommiteesPerCandidate(response) {
+        console.log("fecCommitteeQueryResponse ");
+        console.log(this.lastName);
+
+        if (!response.results) {
+            console.log('error in fec committee query response results');
+            console.log(response);
+            return;
+        }
+        console.log(response.results);
+        var resp = response.results;
+        var authorizedCommittees = [];
+        var candidateId;
+
+        // go thru the response and look for the committees of interest
+        // we are only interested in those that are A-authorized or P-primary
+        for (var i = 0; i < resp.length; i++) {
+            var name = resp[i].name;
+            var candIdCount = resp[i].candidate_ids.length;
+            var designation = resp[i].designation;
+            designation = designation === 'J' ? 'Joint' : designation === 'A' ? 'Authorized' : designation === 'U' ? 'Unauthorized' : designation === 'P' ? 'Principle' : designation;
+            console.log(i + " Committee Name is: " + name + " candidateId count " + candIdCount + ' designation is: ' + designation);
+            if (designation === 'Authorized' || designation === 'Principle') {
+                this.memberAuthorizedCommittees.push(resp[i].committee_id);
+            }
+        }
+        console.log("authorized and principle committed ids are " + this.memberAuthorizedCommittees);
+
+        // now append a clickable item to this card to allow the user to gather more detailed info on campaign finance
+        var clickableItem = '<div class="pbj">click for campaign finance details</div>';
+        // find the last name of this senator so you can find the id in the html
+        var nameStr = response.results[0].name;
+        var nameArray = nameStr.split(',');
+        var idName = "#" + this.lastName.toUpperCase();
+        $(idName).append(clickableItem);
+    }
+
+    errorFecForCommiteesPerCandidate(error) {
+        console.log("fecCommittteeQueryError processing " + error + ' ' + this.firstName + ' ' + this.lastName) ;
+    }
+
+    queryFecForCommiteesPerCandidate() {
+        // find the candidate id for this member by searching through names in fec2018SenatorCandidates 
+        // candidate id changes when the office changes
+        // senator warren has a candidate_id but presidential candidate warren has a different candidate_id
+        // but we are only dealing with senate members here so if we already have it lets not search again
+        // bjt break this up into it's own method
+        if (!this.fecCandidateId) {
+            // this member doesn't already have the candidateId, lets search for it
+            for (var i = 0; i < fec2018SenatorCandidates.length; i++) {
+                var nameArray = fec2018SenatorCandidates[i].name.split(",");
+                if (this.lastName.toUpperCase() === nameArray[0]) {
+                    this.fecCandidateId = fec2018SenatorCandidates[i].candidate_id;
+                    break;
+                }
+            }
+            // if we didn't find it return
+            if (!this.fecCandidateId) { return; }
+            console.log('fec candidate id for ' + this.lastName + ' is: ' + this.fecCandidateId);
+        }
+
+        // now lets search for the committees
         var fecAPIKey = 'i24dHGikX6D7nn8ilW0yct1WdE67QI6udYyNJ8J8';
-        // curl -X GET "https://api.open.fec.gov/v1/candidates/search/?office=P&page=1&sort=name&sort_nulls_last=false&per_page=20&candidate_status=C&cycle=2020&sort_null_only=false&api_key=" + fecAPIKey + "&sort_hide_null=true" -H "accept: application/json"
-        //var fecQuery = 'http://api.open.fec.gov/v1/candidate/P00009621/?cycle=2020&election_full=false&api_key=i24dHGikX6D7nn8ilW0yct1WdE67QI6udYyNJ8J8';
-        // president 2020var fecQuery = 'http://api.open.fec.gov/v1/candidates/?cycle=2020&office=P&candidate_status=C&api_key=' + fecAPIKey;
-        var fecQuery = 'http://api.open.fec.gov/v1/candidates/?cycle=2018&office=S&per_page=65&candidate_status=C&api_key=' + fecAPIKey;
-
-
-
-        // history of candidate'http://api.open.fec.gov/v1/candidate/P00009621/history?api_key=i24dHGikX6D7nn8ilW0yct1WdE67QI6udYyNJ8J8';
-
+        // /candidate/{candidate_id}/committees/
+        var fecQuery = 'http://api.open.fec.gov/v1/candidate/' + this.fecCandidateId + '/committees/?&api_key=' + fecAPIKey
         $.ajax({
-            // fec.gov query
+            // fec.gov query for senators involved in the 2018 race
             url: fecQuery,
             method: "GET",
+            context: this,
         })
-        .then(this.fecQueryResponse)
-        .catch(this.campaignFinanceQueryError);
-    
-        var fecQueryPage2 = 'http://api.open.fec.gov/v1/candidates/?cycle=2018&office=S&per_page=65&page=2&candidate_status=C&api_key=' + fecAPIKey;
+        .then(this.responseFecForCommiteesPerCandidate)
+        .catch(this.errorqueryFecForCommiteesPerCandidate);
+    }
+
+    getCampaignFinanceDetails() {
+        alert("Mmm... Peanut Butter Jelly Time." + this.lastName);
+        // now lets take each committee id and search for some info
+        var fecAPIKey = 'i24dHGikX6D7nn8ilW0yct1WdE67QI6udYyNJ8J8';
+        // /candidate/{candidate_id}/committees/
+        var fecQuery = 'http://api.open.fec.gov/v1/candidate/' + this.fecCandidateId + '/committees/?&api_key=' + fecAPIKey
         $.ajax({
-            // fec.gov query
-            url: fecQueryPage2,
+            // fec.gov query for senators involved in the 2018 race
+            url: fecQuery,
             method: "GET",
-            //beforeSend: function (xhr) { xhr.setRequestHeader('X-API-Key', campaingFinanceApiKey); },
+            context: this,
         })
-        .then(this.fecQueryResponse)
-        .catch(this.campaignFinanceQueryError);
-*/
+        .then(this.responseFecForCommiteesPerCandidate)
+        .catch(this.errorqueryFecForCommiteesPerCandidate);
     }
 
     // define all getters and setters here
@@ -231,33 +362,36 @@ class Member {
     set memberFirstName(name) {this.firstName = name;}
     get memberIdentifier() {return this.memberId;}
     set memberIdentifier(id) {this.memberId = id;}
+    get memberAuthorizedCommittees() { return this.authorizedCommittees;}
+    set memberAuthorizedCommittees(authCommitteeArray) {this.authorizedCommittees = authCommitteeArray}
 
 } // close Member class
 
 var senateInfo = {
     topics: ['Lamar Alexander', 'Jeannne Shaheen', 'Maggie Hassan', 'Susan Collins', 'Angus King', 'Elizabeth Warren', 'Ed Markey', 'Mitch McConnell', 'Chuck Schumer'],
-    newInputValue: 'enter a senator here',
+    newInputValue: 'enter a senator here for new button',
     initButtons: function() {
-        // create instructions for buttons and form
-        var instructionNode = document.createElement('p');
-        instructionNode.className = 'text-primary';
-        instructionNode.textContent = 'Click on a conveniently, already made button, ' 
-                + 'or create your own button with your favorite senator!';
-        senatorInfoLocation.appendChild(instructionNode);
 
         // hang the parent button off of the body
         // prepend to ensure the buttons are at the top of the page
         var divNode = document.createElement('div');
         divNode.setAttribute('id', 'button-parent');
-        senatorInfoLocation.appendChild(divNode);
+        senatorInfoLocation.prepend(divNode);
         this.renderButtons();
+
+        // create instructions for buttons and form
+        var instructionNode = document.createElement('p');
+        instructionNode.className = 'text-light bigger-font';
+        instructionNode.textContent = 'Click on a button to find info on the senator';
+        senatorInfoLocation.prepend(instructionNode);
+        
     },
 
     initForm: function() {
         // <form id='new-button-form'>
         var newButtonForm = document.createElement('form');
         newButtonForm.setAttribute('id', 'new-button-form');
-        senatorInfoLocation.appendChild(newButtonForm);
+        senatorInfoLocation.prepend(newButtonForm);
 
         // <div class='form-group'>
         var divGroup = document.createElement('div');
@@ -267,53 +401,36 @@ var senateInfo = {
         // <label for='new-button-input'>More characters: 
         var newLabel = document.createElement('label');
         newLabel.setAttribute('for', 'new-button-input');
-        newLabel.className = 'text-primary';
-        newLabel.textContent = 'Enter Senator first name and last name: ';
+        newLabel.className = 'text-light bigger-font';
+        newLabel.textContent = 'To add button enter senator first and last name';
         divGroup.appendChild(newLabel);
 
         // <input type='text' id='new-button-input' class='form-control'/>
         var newInput = document.createElement('input');
         newInput.setAttribute('type', 'text');
         newInput.setAttribute('id', 'new-button-input');
-        newInput.className = 'form-control bg-primary text-light input-fields';
+        newInput.className = 'form-control form-control-lg bg-danger text-light input-fields';
 
-        newInput.setAttribute('onfocus', "this.value=''");
-        newInput.setAttribute('value', this.newInputValue);
-        newInput.setAttribute('data-toggle', 'tooltip');
-        newInput.setAttribute('data-placement', 'top');
-        newInput.setAttribute('title', 'Input your own favorite character here');
+        // newInput.setAttribute('placeholder', this.newInputValue);
+        // newInput.setAttribute('data-toggle', 'tooltip');
+        // newInput.setAttribute('data-placement', 'top');
+        // newInput.setAttribute('title', 'Input senator first name and last name here');
         divGroup.appendChild(newInput);
 
         // <input type='submit' class='form-control' id='add-new-button' value='Submit here, Doh!/>
         var newInputButton = document.createElement('input');
         newInputButton.setAttribute('type', 'submit');
-        newInputButton.className = 'form-control bg-primary text-light input-fields';
+        newInputButton.className = 'form-control bg-danger btn-lg text-light input-fields';
         newInputButton.setAttribute('id', 'add-new-button');
         newInputButton.setAttribute('value', 'Submit here');
         divGroup.appendChild(newInputButton);
-    },
-
-    initSenatorArea: function() {
-        // create the parent div for the senator area
-        var parentDivSen = document.createElement('div');
-        parentDivSen.className = 'container text-muted';
-        
-        // create the row div for the senators
-        var rowDivSen = document.createElement('div');
-        rowDivSen.setAttribute('id', 'senators-appear-here');
-        rowDivSen.setAttribute('class', 'flex-row');
-        // append the row to the parent
-        parentDivSen.appendChild(rowDivSen);
-        // append the parent to the senator area
-        senatorInfoLocation.appendChild(parentDivSen);
-
     },
 
     createAndAppendNewButton: function(newButtonName) {
         // create a button
         var newButton = document.createElement('button');
         newButton.setAttribute('type', 'button');
-        newButton.className = 'button btn btn-primary';
+        newButton.className = 'button btn btn-danger btn-lg';
         
         newButton.setAttribute('data-name', newButtonName);
         newButton.textContent = newButtonName;
@@ -347,10 +464,12 @@ var senateInfo = {
 $(document).ready(function() {
     // get the initial member info
     queryAllMembersAPI();
+    queryFec2018SenateCandidates();
+    // queryFec2016SenateCandidates();
     // initialize the page
-    senateInfo.initButtons();
     senateInfo.initForm();
-    senateInfo.initSenatorArea();
+    senateInfo.initButtons();
+    // bjt senateInfo.initSenatorArea();
 
     // Add a new button 
     $('#new-button-form').on("click", '#add-new-button', function(event) {
@@ -381,6 +500,21 @@ $(document).ready(function() {
         senatorsArray[senatorArrayIndex].buildCardForMember();
         // now query for campaign data for the years in question
         senatorsArray[senatorArrayIndex].queryCampaignFinancesAPI();
+        // put the fec query on hold for now
+        // senatorsArray[senatorArrayIndex].queryFecForCommiteesPerCandidate();
+
         senatorArrayIndex++; 
+    });
+
+    $("#senators-appear-here").on("click", ".pbj", function(event) {
+        var lastName = event.target.parentNode.id;
+        var senate = senatorsArray;
+        for (var i = 0; i < senate.length; i++) {
+            if (senate[i].memberLastName.toUpperCase() === lastName) {
+                senate[i].getCampaignFinanceDetails();
+                break;
+            }
+        }
+
     });
 });

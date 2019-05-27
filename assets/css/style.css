@@ -1,14 +1,14 @@
 .jumbotron {
-    min-height: 100px;
+    min-height: 300px;
     margin-top:20px;
-    /* background-image: url("../images/bart-simpson-wallpaper-2560x1600.jpg"); */
+    background-image: url("../images/americanFlag2560x1600.jpg");
     background-size: cover;
     /* background-size: auto 100%;  fits the height but maybe not the width */
     /* background-size: 100% 100%; */ /* height and width but not the aspect ration */
     /* background-size: auto; */
     /* background-position: center center; */
     /* background-position: center top; */
-    background-position: center bottom;
+    background-position: center top;
 }
 form {
     width: 500px;
@@ -17,14 +17,12 @@ form {
 label {
     margin: 20px 0px 8px;
 }
-.rock-salt {
-    /* font-family: 'Rock Salt', cursive; */
-}
 input {
     margin: 0px 0px 8px;
 }
-.btn-primary:hover, .btn-primary:focus, .btn-primary:active {
-    /* background: #33a6cc; */
+
+.bigger-font {
+    font-size: 1.5rem;
 }
 
 button {
