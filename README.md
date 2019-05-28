@@ -1,17 +1,30 @@
-# senator search
-### 
+# REPO Name: senator-search
+## GITHUB Location: https://github.com/BrendaTH/senator-search
 
-This is a mock up of some logic for project 1.
-It queries the propublica api for all senators. Then searches for a particular senator to get the id/memberId/BioGuide Id (whatever you want to call it). With this id it queries the propublica api again for a specific senator. 
+## Operation
+This is a mock up of some logic for project 1 (weeks 8 and 9). I used the Giftastic repo as a starting point, but replaced the themed characters with senators in the buttons. Also it queries the propublica api (with AJAX) instead of the GIPHY api.
 
-It then displays an image of the senator (found at https://theunitedstates.io/images/congress/(size)/memberID.jpg), their name, party affiliation, and a link to thier senate.gov website (last two items were pulled from the propublicas website).
+The first propublica API query if to get all senators. From there info on political party, senator/bioguide id for the senator, state represented, etc.. is available. This allows me to fetch a senator image, links to the senator's website and biography, and display them using flexbox.
 
-The code is based on the giftastic hw done in week 6. As this is only a mockup there are some bugs. Notably: 
-* It only searches on last name. Senators with the same last name won't be found
+Then two senator specific API queries (one each for 2016 and 2018) are done for the propublica campaign finance API. Some senators provide summary info on campaign finance. If it's available it is also displayed. 
+
+Like the Giftastic repo users can click on one of the ready made buttons for senators or they can add a button for a senator of their choice.
+
+
+
+ As this is only a mockup there are some bugs. Notably: 
+* It only searches on last name. Senators with the same last name won't be found. There are none in the current senate though.
 * Likewise senators with middle names won't be found
 * I'm sure there are many others.
 
+## Technology used:
+* AJAX calls to the probublica API for summary info and two to the probulica campaign finance API
+* If a user hits the buttons too fast the asynchronous nature of the the AJAX query will cause the response to write over, so I encapsulated each senator's data with the JavaScript class.
+* Bootstrap 
+* flexbox
 
-To get started go [here:](https://brendath.github.io/senator-search)
+
+## To get started go to:
+ [https://brendath.github.io/senator-search](https://brendath.github.io/senator-search)
 
 
